@@ -5,124 +5,47 @@
 
 PersonDelegate::PersonDelegate(QObject *parent)
     :QStyledItemDelegate{parent}
-{}
-
-
-/**
- * @brief PersonDelegate::createEditor 创建用于编辑单元格数据的 Widget
- * @param parent 编辑 widget 的 parent widget
- * @param option 单元格的样式
- * @param index 当前编辑的 Model 的索引 (可根据列不同,提供不同的Editor)
- * @return QWidget* 返回创建的自定义编辑 widget (Editor)
- */
-QWidget *PersonDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-    if(index.column() == 2)
-    {
-        // set a custom editor widget
-        QComboBox *editor = new QComboBox(parent);
 
-        foreach(QString colorString, QColor::colorNames())
-        {
-            QPixmap pix(50, 50);
-            pix.fill(QColor(colorString));
-            editor->addItem(QIcon(pix), colorString);
-        }
-
-        return editor;
-    }
-    else
-    {
-        return QStyledItemDelegate::createEditor(parent, option, index);
-    }
-}
-
-
-/**
- * @brief PersonDelegate::setEditorData 从 Model 中提取数据并设置到 Editor 中
- * @param editor 用于编辑(颜色)的 widget
- * @param index 需要设置数据的 model 的索引, 用于获取对应的单元格
- */
-void PersonDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
-{
-    // read the right data from the model and display that in the editor widget
-    if(index.column() == 2)
-    {
-        QComboBox *combo = qobject_cast<QComboBox *> (editor);
-        auto colorList = QColor::colorNames();
-        auto currentColorString = index.data(Qt::DisplayRole).toString();
-        auto idx = colorList.indexOf(currentColorString);
-        combo->setCurrentIndex(idx);
-    }
-    else
-    {
-        return QStyledItemDelegate::setEditorData(editor, index);
-    }
 }
 
 /**
- * @brief PersonDelegate::setModelData 将修改的 Editor 数据保存到 Model中
- * @param editor 当前用于编辑(颜色)的 Editor (widget)
- * @param model 要保存到的 Model
- * @param index 需要保存的数据的 model 索引, 用于获取对应的单元格
- */
-void PersonDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
-{
-    // read the data from the editor and write that back into the model
-    if(index.column() == 2)
-    {
-        QComboBox *combo = qobject_cast<QComboBox *> (editor);
-        model->setData(index, combo->currentText(), Qt::EditRole);
-        // model->setData(index, combo->currentText(), PersonModel::FavoriteColorRole);
-    }
-    else
-    {
-        QStyledItemDelegate::setModelData(editor, model, index);
-    }
-}
-
-/**
- * @brief PersonDelegate::updateEditorGeometry 设置 Editor 在 view 中显示的位置与大小
- * @param editor 要设置的 Editor (widget)
- * @param option 单元格样式选项, 提供位置与大小信息
- * @param index 当前编辑操作的 model 索引, 用于获取对应的单元格
- */
-void PersonDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    // make sure that the editor widget is property sized and styled to fit blend in with the view
-    editor->setGeometry(option.rect);
-}
-
-/**
- * @brief PersonDelegate::paint 自定义绘制单元格内容
- * @param painter 画家对象,用于绘制
- * @param option 绘制选项,包含当前单元格绘制的上下文信息
- * @param index 当前绘制操作的 Model 索引, 用于获取对应的单元格.
+ * @brief PersonDelegate::paint 自定义单元格的绘图逻辑,
+ * 将 editor 绘制成 当前 QComboBox 显示的颜色, 尺寸为当前当前单元格稍小一些
+ * @param painter   QPainter 对象指针
+ * @param option    样式选项
+ * @param index     要绘制单元格(cell)的索引(index)
  */
 void PersonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     if(index.column() == 2)
     {
+        // hightlight selected cell
+        // 如果当前 cell 被选中了，就执行高亮绘制
+        if(option.state & QStyle::State_Selected)
+        {
+            painter->fillRect(option.rect, option.palette.highlight());
+        }
+
+        // get favite color
+        QString favColor = index.data(PersonModel::FavoriteColorRole).toString();
+
         painter->save();
 
-        // 先绘制选中背景
-        if(option.state & QStyle::State_Selected)
-            painter->fillRect(option.rect, option.palette.highlight());
-
-        // 绘制颜色矩形
-        QString favColor = index.data(PersonModel::FavoriteColorRole).toString();
         painter->setBrush(QBrush(QColor(favColor)));
-        painter->setPen(Qt::NoPen);
-        painter->drawRect(option.rect.adjusted(3, 3, -3, -3));
 
-        // 文本居中
+        // Draw color rect
+        painter->drawRect(option.rect.adjusted(3, 3, -3, -3));
+        // Text size
         QSize textSize = option.fontMetrics.size(Qt::TextSingleLine, favColor);
+        painter->setBrush(QBrush(QColor(Qt::white)));
+
+        // Adjustments for inner white rectangle
         int widthAdjust = (option.rect.width() - textSize.width()) / 2;
         int heightAdjust = (option.rect.height() - textSize.height()) / 2;
-
-        painter->setBrush(Qt::white);
-        painter->setPen(Qt::black);
         painter->drawRect(option.rect.adjusted(widthAdjust, heightAdjust, -widthAdjust, -heightAdjust));
+
+        //draw text
         painter->drawText(option.rect, favColor, Qt::AlignHCenter | Qt::AlignVCenter);
 
         painter->restore();
@@ -133,14 +56,111 @@ void PersonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     }
 }
 
-
 /**
- * @brief PersonDelegate::sizeHint 提供建议的单元格大小, 使得表格能够合理布局
- * @param option 样式选项, 提供相关显示信息
- * @param index 需要设置的 Model 索引, 用于获取对应的单元格.
- * @return QSize 返回的推荐的单元格尺寸(size).
+ * @brief PersonDelegate::sizeHint 返回单元格推荐的大小
+ * @param option 样式选项
+ * @param index  单元格 index
+ * @return QSize 推荐的 QSize 尺寸
  */
 QSize PersonDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    if(index.column() == 2)
+    {
+        QStringList colorNames = QColor::colorNames();
+
+        int maxLength = 0;
+        for(const QString &color : colorNames)
+        {
+            int width = option.fontMetrics.horizontalAdvance(color);
+            if(width > maxLength)
+                maxLength = width;
+        }
+        maxLength += 40;
+
+        int height = option.fontMetrics.height() + 10;
+
+        return QSize(maxLength, height);
+    }
+
     return QStyledItemDelegate::sizeHint(option, index).expandedTo(QSize(64, option.fontMetrics.height() + 10));
+}
+
+/**
+ * @brief PersonDelegate::createEditor 创建用于编辑单元格内容的控件(widget)
+ * @param parent 父控件
+ * @param option 样式选项
+ * @param index  单元格 index
+ * @return QWidget 创建的编辑控件
+ */
+QWidget *PersonDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    // 使用 QComboBox 绘制 favoriteColor 列
+    if(index.column() == 2)
+    {
+        QComboBox *editor = new QComboBox(parent);
+
+        foreach(QString color, QColor::colorNames())
+        {
+            QPixmap mPix(50, 50);
+            mPix.fill(QColor(color));
+            editor->addItem(QIcon(mPix), color);
+        }
+
+        return editor;
+    }
+    else
+    {
+        return QStyledItemDelegate::createEditor(parent, option, index);
+    }
+}
+
+/**
+ * @brief PersonDelegate::setEditorData 设置 Editor 的数据
+ * @param editor 要设置的 Editor
+ * @param index  源数据 model 的单元格索引
+ */
+void PersonDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+    // 根据 favoriteColor列 的数据 设置 QComboBox(editor) 的显示数据
+    if(index.column() == 2)
+    {
+        QComboBox *combo = static_cast<QComboBox *>(editor);
+
+        int idx = QColor::colorNames().indexOf(index.data(Qt::DisplayRole).toString());
+        combo->setCurrentIndex(idx);
+    }
+}
+
+/**
+ * @brief PersonDelegate::setModelData 将 Editor(编辑器)中的数据写回 Model
+ * @param editor 当前 Editor
+ * @param model  要写回的 model
+ * @param index  写回的 model 的 单元格索引
+ */
+void PersonDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+    if(index.column() == 2)
+    {
+        QComboBox *combo = static_cast<QComboBox *>(editor);
+        model->setData(index, combo->currentText(), PersonModel::FavoriteColorRole);
+        // model->setData(index, editor->currentIndex(), Qt::EditRole); same using
+    }
+    else
+    {
+        QStyledItemDelegate::setModelData(editor, model, index);
+    }
+}
+
+/**
+ * @brief PersonDelegate::updateEditorGeometry 控制 Editor在单元格中的位置和大小
+ * @param editor 当前 Editor
+ * @param option 样式选择
+ * @param index 当前编辑的单元格(cell)的索引
+ */
+void PersonDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    Q_UNUSED(index);
+
+    // 把 editor 设置成 单元格(item)大小
+    editor->setGeometry(option.rect);
 }

@@ -2,6 +2,7 @@
 #define STAREDITOR_H
 
 #include <QWidget>
+#include <QPolygon>
 
 class StarEditor : public QWidget
 {
@@ -25,10 +26,8 @@ signals:
     void editingFinished();
 
 private:
-    int m_starRating{1};
+    int m_starRating{};
     QPolygon m_poly{};
-
-
 };
 
 #endif // STAREDITOR_H

@@ -1,23 +1,18 @@
 #include "person.h"
-#include <QDebug>
 
 Person::Person(QObject *parent)
-    : QObject{parent}
-{}
-
-Person::Person(const QString &names, const QString favoriteColor, const int &age, const int &socialScore, QObject *parent)
-    :m_names(names)
-    ,m_favoriteColor(favoriteColor)
-    ,m_age(age)
-    ,m_socialScore(socialScore)
-    ,QObject(parent)
+    :QObject(parent)
 {
-    qDebug() << "person init";
 }
 
-Person::~Person()
+Person::Person(const QString &name, const QString &favoritecolor, const int &age, const int &socialScore, QObject *parent)
+    :QObject(parent)
+    ,m_names(name)
+    ,m_favoriteColor(favoritecolor)
+    ,m_age(age)
+    ,m_socialScore(socialScore)
 {
-  qDebug() << "person destory";
+
 }
 
 QString Person::names() const
@@ -27,7 +22,10 @@ QString Person::names() const
 
 void Person::setNames(const QString &newNames)
 {
+    if(m_names == newNames)
+        return;
     m_names = newNames;
+    emit namesChanged(m_names);
 }
 
 QString Person::favoriteColor() const
@@ -37,7 +35,10 @@ QString Person::favoriteColor() const
 
 void Person::setFavoriteColor(const QString &newFavoriteColor)
 {
+    if (m_favoriteColor == newFavoriteColor)
+        return;
     m_favoriteColor = newFavoriteColor;
+    emit favoriteColorChanged(m_favoriteColor);
 }
 
 int Person::age() const
@@ -47,7 +48,10 @@ int Person::age() const
 
 void Person::setAge(int newAge)
 {
+    if (m_age == newAge)
+        return;
     m_age = newAge;
+    emit ageChanged(m_age );
 }
 
 int Person::socialScore() const
@@ -57,5 +61,7 @@ int Person::socialScore() const
 
 void Person::setSocialScore(int newSocialScore)
 {
+    if(m_socialScore == newSocialScore)
+        return;
     m_socialScore = newSocialScore;
 }

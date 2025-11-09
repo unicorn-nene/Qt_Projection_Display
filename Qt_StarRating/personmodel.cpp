@@ -1,79 +1,69 @@
 #include "personmodel.h"
 
-/**
- * @brief PersonModel::PersonModel
- * @param parent
- */
 PersonModel::PersonModel(QObject *parent)
-    :QAbstractTableModel(parent)
+    :QAbstractTableModel{parent}
 {
     //populate with initial data
     m_persons.append(new Person("Jamie Lannister", "red", 33, 2));
-    m_persons.append(new Person("Marry Lane", "cyan", 26, 3));
-    m_persons.append(new Person("Steve Moors", "dodagerblue", 44, 4));
-    m_persons.append(new Person("Victor Trunk", "dodgerBlue", 30, 4));
-    m_persons.append(new Person("Ariel Geeny", "blue",33, 5));
-    m_persons.append(new Person("Knut Viken","lightblue",26, 5));
-
-     qDebug() << "PersonModel init";
+    m_persons.append(new Person("Marry Lane", "cyan", 26, 5));
+    m_persons.append(new Person("Steve Moors", "yellow", 44, 3));
+    m_persons.append(new Person("Victor Trunk", "dodgerBlue", 30, 2));
+    m_persons.append(new Person("Ariel Geeny", "blue", 33, 4));
+    m_persons.append(new Person("Knut Vikran", "lightblue", 26, 3));
 }
 
 PersonModel::~PersonModel()
 {
-    qDebug() << "PersonModel destroy";
     qDeleteAll(m_persons);
 }
 
 /**
-* @brief 向 Model 中添加一个已有的 Person 对象
-* @param person 需要插入的 Person 实例对象
-*/
+ * @brief PersonModel::addPerson 向 Model 中添加一个已有的 Person 对象
+ * @param person 要添加的 Person 实例指针
+ */
 void PersonModel::addPerson(Person *person)
 {
-    insertRows(m_persons.size(), 1, QModelIndex());
-    setData(index(m_persons.size() - 1, 0), person->names(), NamesRole);
-    setData(index(m_persons.size() - 1, 1), person->favoriteColor(), FavoriteColorRole);
-    setData(index(m_persons.size() - 1, 2), person->age(), AgeRole);
-    setData(index(m_persons.size() - 1, 3), person->socialScore(), SocialScoreRole);
+    insertRows(m_persons.size(),1);
+
+    setData(index(m_persons.size() - 1, 0), person->names(), Qt::EditRole);
+    setData(index(m_persons.size() - 1, 1), person->favoriteColor(), Qt::EditRole);
+    setData(index(m_persons.size() - 1, 2), person->socialScore(), Qt::EditRole);
 }
 
 /**
- * @brief 添加一个默认构造的 Person 对象
- * @details 主要用于测试或者默认添加条目
+ * @brief PersonModel::addPerson  向 Model 中添加一个空的 Person 条目
  */
 void PersonModel::addPerson()
 {
-    Person *person = new Person("Added person", "yellowgreen", 45, 3, this);
+    Person *person = new Person("Added Person", "yellowgreen", 45, 5 ,this);
     addPerson(person);
 }
 
 /**
- * @brief PersonModel::addPerson
- * @param names
- * @param age
+ * @brief 向 Model中添加一条包含指定信息的 Person 记录
+ * @param names         姓名
+ * @param age           指向年龄的指针（允许为空）
+ * @param socialScore   社交分数
  */
-void PersonModel::addPerson(const QString &names, const int age)
+void PersonModel::addPerson(const QString &names, const int &age, const int &socialScore)
 {
-    Person *person = new Person(names, "yellowgreen", age, 3, this);
+    Person *person = new Person(names, "yellowgreen", age, socialScore, this);
     addPerson(person);
 }
 
 /**
- * @brief 移除指定索引所在的 Person 位置
- * @param index 视图中用户选中的条目索引
+ * @brief PersonModel::removePerson 删除指定 index 的Person项
+ * @param index 要删除的 index
  */
 void PersonModel::removePerson(QModelIndex index)
 {
-    if(index.isValid())
-    {
-        removeRows(index.row(), 1, QModelIndex());
-    }
+    removeRows(index.row(), 1);
 }
 
 /**
- * @brief 返回 model 当前的行数
- * @param parent 父节点索引(未使用)
- * @return 行数
+ * @brief PersonModel::rowCount 返回 model 的行数
+ * @param parent 父索引
+ * @return int 当前 model 的行数
  */
 int PersonModel::rowCount(const QModelIndex &parent) const
 {
@@ -82,21 +72,22 @@ int PersonModel::rowCount(const QModelIndex &parent) const
 }
 
 /**
- * @brief 返回 model 当前的列数
- * @param parent 父节点索引(未使用)
- * @return 列数
+ * @brief PersonModel::columnCount 返回 model 的列数
+ * @param parent 父索引
+ * @return int 当前 model 的列数
  */
 int PersonModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
+
     return 4;
 }
 
 /**
- * @brief 根据 index 和 Role 获取对应的数据
- * @param index 当前访问的单元格位置/索引
- * @param role 访问的数据的类型
- * @return QVariant 封装的对应字段内容
+ * @brief PersonModel::data 返回 model 指定 index 处的数据
+ * @param index      model的索引
+ * @param role       指定的 Qt::Role
+ * @return QVariant  对应 Role 的数据
  */
 QVariant PersonModel::data(const QModelIndex &index, int role) const
 {
@@ -104,62 +95,47 @@ QVariant PersonModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     Person *person = m_persons[index.row()];
-
     if(role == Qt::DisplayRole || role == Qt::EditRole)
     {
         if(index.column() == 0)
-        {
-            // names
             return person->names();
-        }
         if(index.column() == 1)
-        {
-            // ages
             return person->age();
-        }
         if(index.column() == 2)
-        {
-            // favoriteColor
             return person->favoriteColor();
-        }
         if(index.column() == 3)
-        {
-            // socialScore
             return person->socialScore();
-        }
     }
 
-    if(role == Qt::ToolTipRole || role == NamesRole)
+    if(role == NamesRole)
+        return person->names();
+    if(role == FavoriteColorRole)
+        return person->favoriteColor();
+    if(role == AgeRole)
+        return person->age();
+    if(role == SocialScoreRole)
+        return person->socialScore();
+
+    if(role == Qt::EditRole)
     {
+        qDebug() << "Data() method called with eidt role";
         return person->names();
     }
 
-    if(role == FavoriteColorRole)
+    if(role == Qt::ToolTipRole)
     {
-        return person->favoriteColor();
-    }
-
-    if(role == AgeRole)
-    {
-        return person->age();
-    }
-
-    if(role == SocialScoreRole)
-    {
-        return person->socialScore();
+        return person->names();
     }
 
     return QVariant();
 }
 
-
-// ==================== Methods to make the model editable ======================
 /**
- * @brief 将编辑后的数据从 view 写回 Model
- * @param index 对应的数据项(model) 索引
- * @param value 用户修改后的数据
- * @param role 数据角色
- * @return 成功写入返回 ture, 失败返回 false
+ * @brief PersonModel::setData 设置 Model 指定 index 的数据
+ * @param index     修改的索引
+ * @param value     要修改的值
+ * @param role      要修改的 Role
+ * @return bool     返回是否修改成功
  */
 bool PersonModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
@@ -167,48 +143,57 @@ bool PersonModel::setData(const QModelIndex &index, const QVariant &value, int r
         return false;
 
     Person *person = m_persons[index.row()];
-    bool somethingChanged{false};
+    bool somethingChanged = false;
 
-    switch(role)
+    switch (role)
     {
-    case Qt::EditRole: // role == Qt::EditRole 说明这是编辑操作, person 的所有数据项都是可编辑内容.
+    case Qt::EditRole:
     {
-        // change the names
-        if(person->names() != value.toString())
+        if(index.column() == 0)
         {
-            person->setNames(value.toString());
-            somethingChanged = true;
+            if(person->names()!=value.toString())
+            {
+                person->setNames(value.toString());
+                somethingChanged = true;
+            }
         }
-        // change the age
-        if(person->age() != value.toInt())
+        if(index.column() == 1)
         {
-            person->setAge(value.toInt());
-            somethingChanged = true;
+            if(person->age() != value.toInt())
+            {
+                person->setAge(value.toInt());
+                somethingChanged = true;
+            }
         }
-        // change the favoriteColor
-        if(person->favoriteColor() != value.toString())
+        if(index.column() == 2)
         {
-            person->setFavoriteColor(value.toString());
-            somethingChanged = true;
+            if(person->favoriteColor()!=value.toString())
+            {
+                person->setFavoriteColor(value.toString());
+                somethingChanged = true;
+            }
         }
-        // change the SocialSocre
-        if(person->socialScore() != value.toInt())
+        if(index.column() == 3)
         {
-            person->setSocialScore(value.toInt());
-            somethingChanged = true;
+            if(person->socialScore() != value.toInt())
+            {
+                person->setSocialScore(value.toInt());
+                somethingChanged = true;
+            }
         }
-        break;
     }
+    break;
 
     case NamesRole:
     {
+        qDebug() << "Names role changing names, index " << index.row();
         if(person->names()!= value.toString())
         {
             person->setNames(value.toString());
             somethingChanged = true;
         }
-        break;
     }
+    break;
 
     case AgeRole:
     {
@@ -217,8 +202,8 @@ bool PersonModel::setData(const QModelIndex &index, const QVariant &value, int r
             person->setAge(value.toInt());
             somethingChanged = true;
         }
-        break;
     }
+    break;
 
     case FavoriteColorRole:
     {
@@ -227,24 +212,14 @@ bool PersonModel::setData(const QModelIndex &index, const QVariant &value, int r
             person->setFavoriteColor(value.toString());
             somethingChanged = true;
         }
-        break;
+    }
+    break;
     }
 
-    case SocialScoreRole:
+    if(somethingChanged)
     {
-        if(person->socialScore() != value.toInt())
-        {
-            person->setSocialScore(value.toInt());
-            somethingChanged = true;
-        }
-        break;
-    }
-
-    }
-
-    if(somethingChanged == true)
-    {
-        emit dataChanged(index, index, {Qt::DisplayRole | Qt::EditRole});
+        // When reimplementing the setData() function, this signal must to be explicitly
+        emit dataChanged(index, index);
         return true;
     }
 
@@ -252,10 +227,11 @@ bool PersonModel::setData(const QModelIndex &index, const QVariant &value, int r
 }
 
 /**
- * @brief 当 View 想要显示表头 (Header) 时, 会调用此函数来获取对应的标题文字
- * @param section 表头的序号(行号或列号)
- * @param orientation 水平(列头)或垂直(行头)
- * @param role 默认为 Qt::DispalyRole
+ * @brief PersonModel::headerData 返回 Model 表头的数据
+ * @param section       表头的行号或列号
+ * @param orientation   行标题/列标题
+ * @param role          指定的 Qt::Role
+ * @return Qvariant     对应表头的数据
  */
 QVariant PersonModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
@@ -268,55 +244,46 @@ QVariant PersonModel::headerData(int section, Qt::Orientation orientation, int r
         {
         case 0:
             return QString("Names");
-            break;
         case 1:
             return QString("Age");
-            break;
         case 2:
             return QString("Favorite Color");
-            break;
         case 3:
-            return QString("Social Score");
-            break;
+            return QString("Social Socre");
         }
     }
 
-    // vertical headers
     return QString("Person %1").arg(section);
 }
 
-
 /**
- * @brief 返回指定模型项的交互标志/Role
- * @param index 对应的数据项(Model)索引
- * @return 可用的交互行为组合
+ * @brief PersonModel::flags 返回指定索引的 Item 标志flags
+ * @param index             指定的 index
+ * @return Qt::ItemFlags    item 的标志
  */
 Qt::ItemFlags PersonModel::flags(const QModelIndex &index) const
 {
     if(!index.isValid())
-    {
         return QAbstractTableModel::flags(index);
-    }
 
-    // 给每一个合法项额外添加 Qt::ItemsIsEditable 标志, 表示可编辑.
     return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 }
 
 /**
- * @brief 在指定位置插入指定数量的行
- * @param row 要插入的起始行的位置
- * @param count 要插入的行数
- * @param parent 未使用
- * @return 插入是否成功
+ * @brief PersonModel::insertRows 再指定位置插入行
+ * @param row       插入的起始行号
+ * @param count     插入的行数
+ * @param parent    父索引
+ * @return bool     插入是否成功
  */
 bool PersonModel::insertRows(int row, int count, const QModelIndex &parent)
 {
     Q_UNUSED(parent);
 
     beginInsertRows(QModelIndex(), row, row + count - 1);
-    for(int i = 0; i < count; ++i)
+    for(int i = 0;i < count; ++i)
     {
-        m_persons.insert(row, new Person()); // 从 row 位置开始插入新对象, 插入 count 个
+        m_persons.insert(row, new Person());
     }
     endInsertRows();
 
@@ -324,40 +291,49 @@ bool PersonModel::insertRows(int row, int count, const QModelIndex &parent)
 }
 
 /**
- * @brief 删除指定行数的数据
- * @param row 要删除的起始行
- * @param count 要删除的行数
- * @param parent 未使用(用于树结构)
- * @return 删除操作是否成功
+ * @brief PersonModel::removeRows 在指定位置删除行
+ * @param row       删除的起始行号
+ * @param count     删除的行数
+ * @param parent    父索引
+ * @return bool     删除是否成功
  */
 bool PersonModel::removeRows(int row, int count, const QModelIndex &parent)
 {
-    Q_UNUSED(parent);
-
     beginRemoveRows(QModelIndex(), row, row + count - 1);
     for(int i = 0; i < count; ++i)
     {
-        Person *person = m_persons.takeAt(row);
-        delete person;
+        m_persons.removeAt(row);
     }
-
     endRemoveRows();
 
     return true;
 }
 
 /**
- * @brief 返回 model 支持的所有自定义 Role 与名称的映射
- * @return
+ * @brief PersonModel::roleNames 返回 Model 中自定义 Role 的名称映射
+ * @return QHash<int, QByteArray> <Role ID, Role Names>
  */
 QHash<int, QByteArray> PersonModel::roleNames() const
 {
-    QHash<int, QByteArray> roles;
+    QHash<int, QByteArray> roles{};
 
     roles[NamesRole] = "names";
     roles[FavoriteColorRole] = "favoritecolor";
     roles[AgeRole] = "age";
-    roles[SocialScoreRole] = "socialScore";
+    roles[SocialScoreRole] = "socialscore";
 
     return roles;
+}
+
+/**
+ * @brief PersonModel::hasChildren 判断指定 index 下是否有子项
+ * @param parent   要检查的父索引
+ * @return bool    是否有子项
+ */
+bool PersonModel::hasChildren(const QModelIndex &parent) const
+{
+    if(parent.column() == 0)
+        return false;
+
+    return true;
 }

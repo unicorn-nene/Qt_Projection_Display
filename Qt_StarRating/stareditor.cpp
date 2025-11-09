@@ -1,25 +1,16 @@
 #include "stareditor.h"
-#include <QMouseEvent>
 #include <QPainter>
+#include <QMouseEvent>
 
 StarEditor::StarEditor(QWidget *parent)
     : QWidget{parent}
 {
-    // If mouse tracking is enabled, the widget receives mouse move events even if no buttons are pressed.
-    // 如果启用该功能, 则该 widget在没有按下鼠标也可以接受鼠标事件
-    setMouseTracking(true);
-
-    m_poly << QPoint(0, 85)
-           << QPoint(75, 75)
-           << QPoint(100, 10)
-           << QPoint(125, 75)
-           << QPoint(200, 85)
-           << QPoint(150, 125)
-           << QPoint(160, 190)
-           << QPoint(100, 150)
-           << QPoint(40, 190)
-           << QPoint(50, 125)
-           << QPoint(0, 85);
+    m_poly << QPoint(0, 85) << QPoint(75, 75)
+    << QPoint(100, 10) << QPoint(125, 75)
+    << QPoint(200, 85) << QPoint(150, 125)
+    << QPoint(160, 190) << QPoint(100, 150)
+    << QPoint(40, 190) << QPoint(50, 125)
+    << QPoint(0, 85);
 }
 
 int StarEditor::starRating() const
@@ -33,8 +24,8 @@ void StarEditor::setStarRating(int newStarRating)
 }
 
 /**
- * @brief StarEditor::sizeHint 返回建议的该 Editor widget 显示的初始大小
- * @return QSize Editor Widget的尺寸
+ * @brief StarEditor::sizeHint 返回控件推荐的尺寸
+ * @return QSize
  */
 QSize StarEditor::sizeHint() const
 {
@@ -42,9 +33,9 @@ QSize StarEditor::sizeHint() const
 }
 
 /**
- * @brief StarEditor::mouseReleaseEvent
- * 处理鼠标释放事件: 当鼠标松开时,认为用户已经确认评分选择
- * @param event 鼠标释放事件对象
+ * @brief StarEditor::mouseReleaseEvent 鼠标施放事件处理函数
+ * 当鼠标释放时, 发出信号,表示用户完成评分操作
+ * @param event 鼠标释放事件
  */
 void StarEditor::mouseReleaseEvent(QMouseEvent *event)
 {
@@ -53,47 +44,52 @@ void StarEditor::mouseReleaseEvent(QMouseEvent *event)
 }
 
 /**
- * @brief StarEditor::mouseMoveEvent
- * 处理鼠标移动事件: 当鼠标再控件内移动时, 根据鼠标的横坐标动态计算星级评分.
- * @param event 鼠标移动事件对象
+ * @brief StarEditor::mouseMoveEvent 鼠标移动事件处理
+ * 根据鼠标在 Widget 中的横向位置动态计算星级评分
+ * 鼠标横向滑动实时更新评分(1~5)等级,并重新绘制 widget
+ * @param event 鼠标移动事件
  */
 void StarEditor::mouseMoveEvent(QMouseEvent *event)
 {
-    int rating = static_cast<int>(event->position().x() / 20);
+    int rating = event->position().x() / 20;
 
-    // 更新评分并重新绘制(星星数量)
-    if((rating != m_starRating) && (rating < 6))
+    if((m_starRating != rating) && (rating < 6))
     {
         m_starRating = rating;
-        update();
+        update(); // emit -> paint();
     }
 }
 
 /**
- * @brief StarEditor::paintEvent 绘制星级评分widget
- * @param event 绘制事件对象(未使用)
+ * @brief StarEditor::paintEvent 绘制事件处理函数
+ * - 绘制绿色背景
+ * - 绘制黄色星星
+ * - 根据当前 starRating 绘制对应数目的 星星
+ * @param event 绘制事件
  */
 void StarEditor::paintEvent(QPaintEvent *event)
 {
-    Q_UNUSED(event);
-
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(Qt::green);
 
-    // background rectangle green
-    painter.setBrush(Qt::green);
+    painter.save();
+
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    // green background
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QBrush(QColor(Qt::green)));
     painter.drawRect(rect());
 
-    // stars are yellow
-    painter.setBrush(Qt::yellow);
-
-    painter.translate(rect().x(), rect().y() + 5);
+    // yellow stars
+    painter.setBrush(QBrush(QColor(Qt::yellow)));
+    // move painter down a bit
+    painter.translate(rect().x(), rect().y());
     painter.scale(0.1, 0.1);
 
-    for(int i = 0; i < m_starRating; ++i)
+    for(int i = 0 ; i < starRating(); ++i)
     {
         painter.drawPolygon(m_poly);
-        painter.translate(220, 0);   // next star
+        painter.translate(220, 0);
     }
+    painter.restore();
 }

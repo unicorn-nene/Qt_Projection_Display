@@ -11,6 +11,7 @@ public:
     explicit StarDelegate(QObject *parent = nullptr);
 
     // QAbstractItemDelegate interface
+public:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
@@ -21,7 +22,7 @@ private slots:
     void commitAndCloseEditor();
 
 private:
-    QPolygon m_poly{};
+    QPolygon m_poly;
 };
 
 #endif // STARDELEGATE_H
